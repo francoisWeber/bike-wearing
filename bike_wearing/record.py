@@ -95,15 +95,32 @@ def record(
     moment: Moment,
     feeling: Feeling,
     copy_yesterday: bool = typer.Option(False, help="copy yesterday's values ?"),
+    set_date: str = typer.Option(None, help="The date to record dd/mm/yyyy"),
 ):
-    dtime = datetime.now()
-    timestamp = dtime.strftime("%Y-%m-%dT%H-%M")
-    if moment == Moment.morning.value:
+    # setup datetime
+    if set_date:
+        dtime = datetime.strptime(set_date, "%d/%m/%Y")
+    else:
+        dtime = datetime.now()
+    # setup moment of the day
+    if moment.value == Moment.morning.value:
+        # set time to 8h30
         dtime = dtime.replace(hour=8, minute=30)
-    elif moment == Moment.evening.value:
-        dtime = (dtime - timedelta(days=1)).replace(hour=18, minute=0)
+    elif moment.value == Moment.evening.value:
+        if set_date is None:
+            # one day back
+            dtime = dtime - timedelta(days=1)
+        # set time to 18h30
+        dtime = dtime.replace(hour=18, minute=0)
+    logger.info(f"Using dtime {dtime}")
+    timestamp = dtime.strftime("%Y-%m-%dT%H-%M")
     # start recording
-    infos = {}
+    infos = {
+        "moment": moment.value,
+        "timestamp": timestamp,
+        "feeling": feeling.value,
+        "data_version": DATA_VERSION,
+    }
     # clothing
     if copy_yesterday:
         with open(FNAME, "r") as f:
@@ -112,10 +129,6 @@ def record(
         infos.update(record_clothing())
     # weather
     infos.update(get_weather_at_time(dtime))
-    # infos
-    infos.update(
-        {"timestamp": timestamp, "feeling": feeling.value, "data_version": DATA_VERSION}
-    )
     # append to file
     with open(FNAME, "a+") as f:
         f.write(json.dumps(infos) + "\n")
