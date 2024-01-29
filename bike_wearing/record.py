@@ -7,7 +7,7 @@ import questionary
 from loguru import logger
 
 DATA_VERSION = 1
-FNAME = "/Users/fweber/code/bike-wearing/records.json"
+FNAME = "/Users/frweber/code/bike-wearing/records/records.json"
 
 
 class Feeling(Enum):
